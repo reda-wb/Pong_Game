@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Pong Game - Classic Arcade</title>
+    <title>Pong Mobile - Classic Game</title>
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
     <style>
         body {
@@ -29,9 +29,9 @@
             transition: all 0.3s ease;
         }
         
-        .button-glow:hover {
+        .button-glow:active {
             box-shadow: 0 0 30px rgba(59, 130, 246, 0.9);
-            transform: scale(1.05);
+            transform: scale(0.95);
         }
         
         .powerup-display {
@@ -49,37 +49,29 @@
             pointer-events: none;
         }
         
-        .touch-control {
+        .touch-zone {
             position: fixed;
-            width: 45%;
-            height: 50vh;
-            background: rgba(59, 130, 246, 0.1);
-            border: 2px solid rgba(59, 130, 246, 0.3);
-            border-radius: 10px;
-            display: none;
-            align-items: center;
-            justify-content: center;
-            font-size: 3rem;
-            color: rgba(59, 130, 246, 0.5);
+            width: 50%;
+            height: 100vh;
+            top: 0;
+            opacity: 0;
             user-select: none;
             -webkit-user-select: none;
             touch-action: none;
+            z-index: 100;
+            display: none;
         }
         
-        .touch-control.active {
-            background: rgba(59, 130, 246, 0.3);
-            border-color: rgba(59, 130, 246, 0.6);
+        .touch-zone.active {
+            display: block;
         }
         
-        @media (max-width: 768px) {
-            #gameCanvas {
-                max-width: 100%;
-                height: auto;
-            }
-            
-            .touch-control {
-                display: flex;
-            }
+        #touchZoneLeft {
+            left: 0;
+        }
+        
+        #touchZoneRight {
+            right: 0;
         }
     </style>
 </head>
@@ -116,8 +108,9 @@
                 
                 <div class="mt-6 text-left text-gray-300 text-sm">
                     <h3 class="font-bold mb-2">Controls:</h3>
-                    <p>Player 1: ↑/↓ arrow keys</p>
-                    <p>Player 2: W/S keys</p>
+                    <p class="hidden md:block">Player 1: ↑/↓ arrow keys</p>
+                    <p class="hidden md:block">Player 2: W/S keys</p>
+                    <p class="md:hidden">Swipe left/right side to move paddles</p>
                     <p class="mt-2 text-yellow-400">Power-ups appear randomly!</p>
                 </div>
             </div>
@@ -125,22 +118,22 @@
         
         <!-- Game Canvas -->
         <div id="gameContainer" class="hidden text-center">
-            <div class="mb-4 flex justify-between items-center max-w-4xl mx-auto">
+            <div class="mb-4 flex justify-between items-center max-w-4xl mx-auto px-2">
                 <div class="text-left">
-                    <div class="text-4xl font-bold text-blue-400 glow" id="player1Score">0</div>
-                    <div class="text-sm text-gray-400">Player 1</div>
+                    <div class="text-3xl md:text-4xl font-bold text-blue-400 glow" id="player1Score">0</div>
+                    <div class="text-xs md:text-sm text-gray-400">Player 1</div>
                     <div id="p1PowerUp" class="text-xs text-yellow-400 mt-1"></div>
                 </div>
                 <div class="text-center">
-                    <div class="text-sm text-gray-400" id="gameMode">Single Player</div>
+                    <div class="text-xs md:text-sm text-gray-400" id="gameMode">Single Player</div>
                     <div class="text-xs text-gray-500" id="difficulty"></div>
-                    <button id="pauseBtn" class="mt-2 bg-yellow-600 hover:bg-yellow-700 text-white font-bold py-1 px-4 rounded text-sm">
+                    <button id="pauseBtn" class="mt-2 bg-yellow-600 hover:bg-yellow-700 text-white font-bold py-1 px-3 md:px-4 rounded text-xs md:text-sm">
                         Pause
                     </button>
                 </div>
                 <div class="text-right">
-                    <div class="text-4xl font-bold text-red-400 glow" id="player2Score">0</div>
-                    <div class="text-sm text-gray-400" id="player2Label">AI</div>
+                    <div class="text-3xl md:text-4xl font-bold text-red-400 glow" id="player2Score">0</div>
+                    <div class="text-xs md:text-sm text-gray-400" id="player2Label">AI</div>
                     <div id="p2PowerUp" class="text-xs text-yellow-400 mt-1"></div>
                 </div>
             </div>
@@ -153,7 +146,7 @@
         </div>
         
         <!-- Pause Menu -->
-        <div id="pauseMenu" class="hidden fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center">
+        <div id="pauseMenu" class="hidden fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50">
             <div class="bg-slate-800 p-8 rounded-lg border-2 border-blue-500">
                 <h2 class="text-3xl text-white mb-6 glow">PAUSED</h2>
                 <div class="space-y-4">
@@ -171,19 +164,9 @@
         </div>
     </div>
     
-    <!-- Mobile Touch Controls -->
-    <div id="touchControlLeft" class="touch-control" style="left: 2%; bottom: 25%;">
-        <div>
-            <div style="text-align: center;">↑</div>
-            <div style="text-align: center; margin-top: 20px;">↓</div>
-        </div>
-    </div>
-    <div id="touchControlRight" class="touch-control" style="right: 2%; bottom: 25%;">
-        <div>
-            <div style="text-align: center;">↑</div>
-            <div style="text-align: center; margin-top: 20px;">↓</div>
-        </div>
-    </div>
+    <!-- Mobile Touch Zones (Invisible) -->
+    <div id="touchZoneLeft" class="touch-zone"></div>
+    <div id="touchZoneRight" class="touch-zone"></div>
 
     <script>
         // Game Constants
@@ -192,25 +175,27 @@
         
         // Audio Setup
         const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-        let backgroundMusic = null;
-        let musicPlaying = false;
         
         // Sound effect generator
         function playSound(frequency, duration, type = 'sine') {
-            const oscillator = audioContext.createOscillator();
-            const gainNode = audioContext.createGain();
-            
-            oscillator.connect(gainNode);
-            gainNode.connect(audioContext.destination);
-            
-            oscillator.frequency.value = frequency;
-            oscillator.type = type;
-            
-            gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
-            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + duration);
-            
-            oscillator.start(audioContext.currentTime);
-            oscillator.stop(audioContext.currentTime + duration);
+            try {
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+                
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+                
+                oscillator.frequency.value = frequency;
+                oscillator.type = type;
+                
+                gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + duration);
+                
+                oscillator.start(audioContext.currentTime);
+                oscillator.stop(audioContext.currentTime + duration);
+            } catch (e) {
+                console.log('Audio not supported');
+            }
         }
         
         function playPaddleHit() {
@@ -232,52 +217,9 @@
             setTimeout(() => playSound(660, 0.15, 'sine'), 100);
         }
         
-        // Background music (simple melody loop)
-        function startBackgroundMusic() {
-            if (musicPlaying) return;
-            musicPlaying = true;
-            playBackgroundMelody();
-        }
-        
-        function playBackgroundMelody() {
-            if (!musicPlaying || !gameState.running) return;
-            
-            const notes = [262, 294, 330, 349, 392, 440, 494, 523]; // C major scale
-            const pattern = [0, 2, 4, 2, 0, 2, 4, 2, 4, 5, 7, 4, 5, 7];
-            let noteIndex = 0;
-            
-            function playNote() {
-                if (!musicPlaying || !gameState.running) return;
-                
-                const oscillator = audioContext.createOscillator();
-                const gainNode = audioContext.createGain();
-                
-                oscillator.connect(gainNode);
-                gainNode.connect(audioContext.destination);
-                
-                oscillator.frequency.value = notes[pattern[noteIndex % pattern.length]];
-                oscillator.type = 'triangle';
-                
-                gainNode.gain.setValueAtTime(0.05, audioContext.currentTime);
-                gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
-                
-                oscillator.start(audioContext.currentTime);
-                oscillator.stop(audioContext.currentTime + 0.3);
-                
-                noteIndex++;
-                setTimeout(playNote, 400);
-            }
-            
-            playNote();
-        }
-        
-        function stopBackgroundMusic() {
-            musicPlaying = false;
-        }
-        
         // Game State
         let gameState = {
-            mode: null, // 'single' or 'multi'
+            mode: null,
             difficulty: null,
             paused: false,
             running: false,
@@ -296,8 +238,8 @@
         
         // Power-up Configuration
         const POWERUP_SIZE = 15;
-        const POWERUP_DURATION = 5000; // 5 seconds
-        const POWERUP_SPAWN_INTERVAL = 10000; // Every 10 seconds
+        const POWERUP_DURATION = 5000;
+        const POWERUP_SPAWN_INTERVAL = 10000;
         
         // Game Objects
         let player1 = {
@@ -385,19 +327,25 @@
             gameState.paused = false;
             gameState.running = true;
             
-            // Reset game objects
             resetGame();
             
-            // Update UI
             document.getElementById('menu').classList.add('hidden');
             document.getElementById('gameContainer').classList.remove('hidden');
             document.getElementById('gameMode').textContent = mode === 'single' ? 'Single Player' : 'Two Players';
             document.getElementById('player2Label').textContent = mode === 'single' ? 'AI' : 'Player 2';
-            document.getElementById('difficulty').textContent = difficulty ? `Difficulty: ${difficulty.toUpperCase()}` : '';
             
-            // Start game loop
+            if (difficulty) {
+                const diffText = {easy: 'Easy', medium: 'Medium', hard: 'Hard'};
+                document.getElementById('difficulty').textContent = `Difficulty: ${diffText[difficulty]}`;
+            } else {
+                document.getElementById('difficulty').textContent = '';
+            }
+            
+            // Activate touch zones
+            touchZoneLeft.classList.add('active');
+            touchZoneRight.classList.add('active');
+            
             lastPowerUpSpawn = Date.now();
-            startBackgroundMusic();
             gameLoop();
         }
         
@@ -424,8 +372,7 @@
             ball.y = canvas.height / 2;
             ball.speed = INITIAL_BALL_SPEED;
             
-            // Random direction
-            const angle = (Math.random() * Math.PI / 3) - Math.PI / 6; // -30 to 30 degrees
+            const angle = (Math.random() * Math.PI / 3) - Math.PI / 6;
             const direction = Math.random() < 0.5 ? 1 : -1;
             ball.dx = Math.cos(angle) * ball.speed * direction;
             ball.dy = Math.sin(angle) * ball.speed;
@@ -445,10 +392,14 @@
         function quitToMenu() {
             gameState.running = false;
             gameState.paused = false;
-            stopBackgroundMusic();
             if (gameState.animationId) {
                 cancelAnimationFrame(gameState.animationId);
             }
+            
+            // Deactivate touch zones
+            touchZoneLeft.classList.remove('active');
+            touchZoneRight.classList.remove('active');
+            
             document.getElementById('gameContainer').classList.add('hidden');
             document.getElementById('pauseMenu').classList.add('hidden');
             document.getElementById('menu').classList.remove('hidden');
@@ -464,8 +415,8 @@
             const p1Display = document.getElementById('p1PowerUp');
             const p2Display = document.getElementById('p2PowerUp');
             
-            p1Display.textContent = player1.powerUp ? `⚡ ${player1.powerUp.toUpperCase()}` : '';
-            p2Display.textContent = player2.powerUp ? `⚡ ${player2.powerUp.toUpperCase()}` : '';
+            p1Display.textContent = player1.powerUp ? `⚡ ${player1.powerUp === 'speed' ? 'SPEED' : 'SIZE'}` : '';
+            p2Display.textContent = player2.powerUp ? `⚡ ${player2.powerUp === 'speed' ? 'SPEED' : 'SIZE'}` : '';
         }
         
         function spawnPowerUp() {
@@ -522,13 +473,10 @@
             
             if (now - aiLastUpdate > config.reactionDelay) {
                 aiLastUpdate = now;
-                
-                // Predict ball position with error margin
                 const errorOffset = (Math.random() - 0.5) * config.errorMargin;
                 aiTargetY = ball.y + errorOffset;
             }
             
-            // Move towards target
             const paddleCenter = player2.y + player2.height / 2;
             const diff = aiTargetY - paddleCenter;
             
@@ -540,7 +488,7 @@
         }
         
         function updatePaddles() {
-            // Player 1 controls (Arrow Keys)
+            // Player 1 controls
             if (keys['ArrowUp']) {
                 player1.dy = -PADDLE_SPEED;
             } else if (keys['ArrowDown']) {
@@ -549,7 +497,7 @@
                 player1.dy = 0;
             }
             
-            // Player 2 or AI controls (W/S Keys)
+            // Player 2 or AI controls
             if (gameState.mode === 'multi') {
                 if (keys['w'] || keys['W']) {
                     player2.dy = -PADDLE_SPEED;
@@ -593,23 +541,16 @@
                     ball.y + ball.size > paddle.y &&
                     ball.y - ball.size < paddle.y + paddle.height) {
                     
-                    // Calculate hit position on paddle (-1 to 1)
                     const hitPos = ((ball.y - (paddle.y + paddle.height / 2)) / (paddle.height / 2));
-                    
-                    // Adjust angle based on hit position
-                    const maxAngle = Math.PI / 3; // 60 degrees
+                    const maxAngle = Math.PI / 3;
                     const angle = hitPos * maxAngle;
                     
-                    // Increase speed slightly
                     ball.speed = Math.min(ball.speed + 0.3, MAX_BALL_SPEED);
-                    
-                    // Apply speed boost power-up
                     const speedMultiplier = paddle.powerUp === 'speed' ? 1.5 : 1;
                     
                     ball.dx = Math.cos(angle) * ball.speed * (isPlayer1 ? 1 : -1) * speedMultiplier;
                     ball.dy = Math.sin(angle) * ball.speed * speedMultiplier;
                     
-                    // Move ball outside paddle to prevent double collision
                     if (isPlayer1) {
                         ball.x = paddle.x + paddle.width + ball.size;
                     } else {
@@ -645,24 +586,20 @@
         function updatePowerUps() {
             const now = Date.now();
             
-            // Spawn new power-up
             if (now - lastPowerUpSpawn > POWERUP_SPAWN_INTERVAL && powerUps.length < 2) {
                 spawnPowerUp();
                 lastPowerUpSpawn = now;
             }
             
-            // Update existing power-ups
             powerUps.forEach(powerUp => {
                 powerUp.rotation += 0.05;
                 
-                // Check collision with ball
                 const dist = Math.sqrt(
                     Math.pow(ball.x - powerUp.x, 2) + 
                     Math.pow(ball.y - powerUp.y, 2)
                 );
                 
                 if (dist < ball.size + powerUp.size) {
-                    // Determine which player gets it based on ball direction
                     const player = ball.dx < 0 ? player1 : player2;
                     applyPowerUp(player, powerUp.type);
                     playPowerUp();
@@ -671,7 +608,6 @@
                 }
             });
             
-            // Remove collected power-ups
             powerUps = powerUps.filter(p => !p.collected);
         }
         
@@ -705,8 +641,6 @@
             function drawPaddle(paddle, color) {
                 ctx.fillStyle = color;
                 ctx.fillRect(paddle.x, paddle.y, paddle.width, paddle.height);
-                
-                // Glow effect
                 ctx.shadowBlur = 15;
                 ctx.shadowColor = color;
                 ctx.fillRect(paddle.x, paddle.y, paddle.width, paddle.height);
@@ -732,7 +666,6 @@
                 ctx.rotate(powerUp.rotation);
                 
                 if (powerUp.type === 'speed') {
-                    // Lightning bolt
                     ctx.fillStyle = '#fbbf24';
                     ctx.shadowBlur = 10;
                     ctx.shadowColor = '#fbbf24';
@@ -746,7 +679,6 @@
                     ctx.closePath();
                     ctx.fill();
                 } else {
-                    // Plus sign for size
                     ctx.fillStyle = '#10b981';
                     ctx.shadowBlur = 10;
                     ctx.shadowColor = '#10b981';
@@ -779,7 +711,7 @@
                 updateParticles();
                 draw();
             } else {
-                draw(); // Still draw when paused
+                draw();
             }
             
             gameState.animationId = requestAnimationFrame(gameLoop);
@@ -792,21 +724,20 @@
             }
         });
         
-        // Mobile Touch Controls
-        const touchControlLeft = document.getElementById('touchControlLeft');
-        const touchControlRight = document.getElementById('touchControlRight');
+        // Mobile Touch Controls with Swipe
+        const touchZoneLeft = document.getElementById('touchZoneLeft');
+        const touchZoneRight = document.getElementById('touchZoneRight');
         
-        let touchStates = {
-            leftUp: false,
-            leftDown: false,
-            rightUp: false,
-            rightDown: false
+        // Touch state tracking
+        let touchState = {
+            left: { active: false, startY: 0, currentY: 0, identifier: null },
+            right: { active: false, startY: 0, currentY: 0, identifier: null }
         };
         
         // Responsive canvas sizing
         function resizeCanvas() {
-            const maxWidth = window.innerWidth - 40;
-            const maxHeight = window.innerHeight - 250;
+            const maxWidth = window.innerWidth - 20;
+            const maxHeight = window.innerHeight - 200;
             const aspectRatio = 800 / 600;
             
             let newWidth = 800;
@@ -829,97 +760,114 @@
         window.addEventListener('resize', resizeCanvas);
         resizeCanvas();
         
-        // Handle touch events for left control
-        function handleTouchStart(e, control, upKey, downKey) {
+        // Swipe-based touch control
+        function handleTouchStart(e, zone, isLeft) {
+            if (!gameState.running || gameState.paused) return;
             e.preventDefault();
-            const rect = control.getBoundingClientRect();
-            const touches = e.touches;
             
-            for (let i = 0; i < touches.length; i++) {
-                const touch = touches[i];
-                const y = touch.clientY - rect.top;
-                const midpoint = rect.height / 2;
-                
-                if (y < midpoint) {
-                    keys[upKey] = true;
-                    touchStates[control.id === 'touchControlLeft' ? 'leftUp' : 'rightUp'] = true;
-                } else {
-                    keys[downKey] = true;
-                    touchStates[control.id === 'touchControlLeft' ? 'leftDown' : 'rightDown'] = true;
+            const touch = e.changedTouches[0];
+            const state = isLeft ? touchState.left : touchState.right;
+            
+            state.active = true;
+            state.startY = touch.clientY;
+            state.currentY = touch.clientY;
+            state.identifier = touch.identifier;
+        }
+        
+        function handleTouchMove(e, zone, isLeft) {
+            if (!gameState.running || gameState.paused) return;
+            e.preventDefault();
+            
+            const state = isLeft ? touchState.left : touchState.right;
+            if (!state.active) return;
+            
+            // Find the touch with matching identifier
+            for (let i = 0; i < e.touches.length; i++) {
+                if (e.touches[i].identifier === state.identifier) {
+                    state.currentY = e.touches[i].clientY;
+                    break;
                 }
             }
-            control.classList.add('active');
-        }
-        
-        function handleTouchEnd(e, control, upKey, downKey) {
-            e.preventDefault();
-            keys[upKey] = false;
-            keys[downKey] = false;
-            if (control.id === 'touchControlLeft') {
-                touchStates.leftUp = false;
-                touchStates.leftDown = false;
-            } else {
-                touchStates.rightUp = false;
-                touchStates.rightDown = false;
-            }
-            control.classList.remove('active');
-        }
-        
-        function handleTouchMove(e, control, upKey, downKey) {
-            e.preventDefault();
-            const rect = control.getBoundingClientRect();
-            const touches = e.touches;
             
-            // Reset states
-            keys[upKey] = false;
-            keys[downKey] = false;
+            // Calculate swipe delta
+            const delta = state.currentY - state.startY;
+            const sensitivity = 2; // Adjust for more/less sensitive controls
             
-            for (let i = 0; i < touches.length; i++) {
-                const touch = touches[i];
-                const x = touch.clientX;
-                const y = touch.clientY;
-                
-                // Check if touch is still within control bounds
-                if (x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom) {
-                    const localY = y - rect.top;
-                    const midpoint = rect.height / 2;
-                    
-                    if (localY < midpoint) {
-                        keys[upKey] = true;
+            // Apply movement based on swipe direction
+            if (isLeft) {
+                if (Math.abs(delta) > 5) {
+                    if (delta < 0) {
+                        // Swiping up
+                        keys['ArrowUp'] = true;
+                        keys['ArrowDown'] = false;
                     } else {
-                        keys[downKey] = true;
+                        // Swiping down
+                        keys['ArrowUp'] = false;
+                        keys['ArrowDown'] = true;
                     }
+                } else {
+                    keys['ArrowUp'] = false;
+                    keys['ArrowDown'] = false;
+                }
+            } else {
+                if (Math.abs(delta) > 5) {
+                    if (delta < 0) {
+                        // Swiping up
+                        keys['W'] = true;
+                        keys['S'] = false;
+                    } else {
+                        // Swiping down
+                        keys['W'] = false;
+                        keys['S'] = true;
+                    }
+                } else {
+                    keys['W'] = false;
+                    keys['S'] = false;
+                }
+            }
+            
+            // Update start position for continuous movement
+            state.startY = state.currentY;
+        }
+        
+        function handleTouchEnd(e, zone, isLeft) {
+            if (!gameState.running) return;
+            e.preventDefault();
+            
+            const state = isLeft ? touchState.left : touchState.right;
+            
+            // Check if the ended touch matches our tracked touch
+            for (let i = 0; i < e.changedTouches.length; i++) {
+                if (e.changedTouches[i].identifier === state.identifier) {
+                    state.active = false;
+                    state.identifier = null;
+                    
+                    // Stop movement
+                    if (isLeft) {
+                        keys['ArrowUp'] = false;
+                        keys['ArrowDown'] = false;
+                    } else {
+                        keys['W'] = false;
+                        keys['S'] = false;
+                    }
+                    break;
                 }
             }
         }
         
-        // Left control (Player 1)
-        touchControlLeft.addEventListener('touchstart', (e) => {
-            handleTouchStart(e, touchControlLeft, 'ArrowUp', 'ArrowDown');
-        });
+        // Left zone (Player 1)
+        touchZoneLeft.addEventListener('touchstart', (e) => handleTouchStart(e, touchZoneLeft, true), { passive: false });
+        touchZoneLeft.addEventListener('touchmove', (e) => handleTouchMove(e, touchZoneLeft, true), { passive: false });
+        touchZoneLeft.addEventListener('touchend', (e) => handleTouchEnd(e, touchZoneLeft, true), { passive: false });
+        touchZoneLeft.addEventListener('touchcancel', (e) => handleTouchEnd(e, touchZoneLeft, true), { passive: false });
         
-        touchControlLeft.addEventListener('touchend', (e) => {
-            handleTouchEnd(e, touchControlLeft, 'ArrowUp', 'ArrowDown');
-        });
+        // Right zone (Player 2)
+        touchZoneRight.addEventListener('touchstart', (e) => handleTouchStart(e, touchZoneRight, false), { passive: false });
+        touchZoneRight.addEventListener('touchmove', (e) => handleTouchMove(e, touchZoneRight, false), { passive: false });
+        touchZoneRight.addEventListener('touchend', (e) => handleTouchEnd(e, touchZoneRight, false), { passive: false });
+        touchZoneRight.addEventListener('touchcancel', (e) => handleTouchEnd(e, touchZoneRight, false), { passive: false });
         
-        touchControlLeft.addEventListener('touchmove', (e) => {
-            handleTouchMove(e, touchControlLeft, 'ArrowUp', 'ArrowDown');
-        });
-        
-        // Right control (Player 2)
-        touchControlRight.addEventListener('touchstart', (e) => {
-            handleTouchStart(e, touchControlRight, 'W', 'S');
-        });
-        
-        touchControlRight.addEventListener('touchend', (e) => {
-            handleTouchEnd(e, touchControlRight, 'W', 'S');
-        });
-        
-        touchControlRight.addEventListener('touchmove', (e) => {
-            handleTouchMove(e, touchControlRight, 'W', 'S');
-        });
-        
-        // Prevent default touch behavior on the entire document
+        // Prevent default touch behavior
         document.addEventListener('touchmove', (e) => {
             if (gameState.running) {
                 e.preventDefault();
